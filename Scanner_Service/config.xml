@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<!--
+Thông tin cấu hình cho service
+INTERVAL: THỜI GIAN SERVICE LẶP LẠI - MILISECONDS
+-->
+<DATA>
+  <CONFIG>
+    <INTERVAL>5000</INTERVAL>
+    <MYSQL_SERVER>localhost</MYSQL_SERVER>
+    <MYSQL_DBNAME>trantu</MYSQL_DBNAME>
+    <MYSQL_USER>root</MYSQL_USER>
+    <MYSQL_PASS>123**abc</MYSQL_PASS>
+    <MYSQL_SSL>0</MYSQL_SSL>
+    <SMS_API>http://10.34.1.7:8088/Sms.svc</SMS_API>
+    <SMS_USER>tutv.hdg</SMS_USER>
+    <SMS_PASS>@Aa123456</SMS_PASS>
+  </CONFIG>
+</DATA>
