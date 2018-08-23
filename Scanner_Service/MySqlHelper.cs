@@ -196,17 +196,17 @@ namespace Scanner_Service
             }
         }
 
-        public List<People> Select_PeopleToSend()
+        public List<Host> Select_HostToScan()
         {
             try
             {
-                var list = new List<People>();
+                var list = new List<Host>();
 
                 string query = @"
-                    select uh.hostId, uh.userId, u.phone
-                    from user_host uh join user u on uh.userId = u.Id 
-                    where u.status = 1 and sendsms = 1
-                    order by uh.hostId
+                    select *
+                    from host
+                    where status = 1
+                    order by id
                 ";
 
                 //Create a list to store the result
@@ -221,11 +221,12 @@ namespace Scanner_Service
                     //Read the data and store them in the list
                     while (dataReader.Read())
                     {
-                        list.Add(new People()
+                        list.Add(new Host()
                         {
-                            hostId = dataReader["hostId"] + "",
-                            userId = dataReader["userId"] + "",
-                            phone = dataReader["phone"] + ""
+                            id = dataReader["id"] + "",
+                            name = dataReader["name"] + "",
+                            phone = dataReader["phone"] + "",
+                            url = dataReader["url"] + ""
                         });
                     }
 
@@ -248,7 +249,7 @@ namespace Scanner_Service
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
                 this.CloseConnection();
-                return new List<People>();
+                return new List<Host>();
             }
         }
 

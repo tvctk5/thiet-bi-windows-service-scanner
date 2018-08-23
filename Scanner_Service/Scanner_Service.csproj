@@ -61,7 +61,7 @@
     <Compile Include="Models\Config.cs" />
     <Compile Include="Models\Message.cs" />
     <Compile Include="Models\MySqlConfig.cs" />
-    <Compile Include="Models\People.cs" />
+    <Compile Include="Models\Host.cs" />
     <Compile Include="Models\SmsService.cs" />
     <Compile Include="MySqlHelper.cs" />
     <Compile Include="ProjectInstaller.cs">

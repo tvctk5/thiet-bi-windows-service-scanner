@@ -6,10 +6,11 @@ using System.Threading.Tasks;
 
 namespace Scanner_Service.Models
 {
-    public class People
+    public class Host
     {
-        public string hostId { get; set; }
-        public string userId { get; set; }
+        public string id { get; set; }
+        public string name { get; set; }
         public string phone { get; set; }
+        public string url { get; set; }
     }
 }

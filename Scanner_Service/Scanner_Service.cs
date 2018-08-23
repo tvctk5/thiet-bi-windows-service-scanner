@@ -26,7 +26,7 @@ namespace Scanner_Service
             // timeDelay = new System.Timers.Timer();
             // timeDelay.Elapsed += new System.Timers.ElapsedEventHandler(WorkProcess);
 
-            this.ServiceName = "SMS Service";
+            this.ServiceName = "Scanner Service";
             this.EventLog.Log = "Application";
 
             // These Flags set whether or not to handle that specific
@@ -43,35 +43,37 @@ namespace Scanner_Service
             // Get data and send message
             // Try to send a message
             // get all people to send sms
-            var lstPeople = mySql.Select_PeopleToSend();
-            // ServiceLog.WriteErrorLog("lstPeople:" + lstPeople.Count);
-            if (lstPeople != null && lstPeople.Count > 0)
+            var lstHost = mySql.Select_HostToScan();
+
+            if (lstHost != null && lstHost.Count > 0)
             {
-                var lstSms = mySql.Select_SMSPending();
-                // ServiceLog.WriteErrorLog("lstSms:" + lstSms.Count);
-                if (lstSms != null && lstSms.Count > 0)
+                foreach (var itemHost in lstHost)
                 {
-                    //Sending message...
-                    foreach (var itemSms in lstSms)
-                    {
-                        var people_Filter = lstPeople.Where(o => o.hostId == itemSms.hostId).ToList();
-                        if (people_Filter != null && people_Filter.Count > 0)
-                        {
-                            itemSms.message = itemSms.hostname + ": " + itemSms.message + " - luc " + itemSms.createddate;
+                    HostScan(itemHost);
+                }
+            }
+        }
 
-                            // List phone
-                            var listPhone = string.Join(",", people_Filter.Select(o => o.phone).ToArray());
-                            ServiceLog.WriteErrorLog(string.Format("SMS sending...: HostId: {0}; SMSId: {1}; List Phone number: {2}", itemSms.hostId, itemSms.id, listPhone));
-                            
-                            // send each person
-                            foreach (var itemPeople in people_Filter)
-                            {
-                                 
-                            }
-                        } // End if (people_Filter != null && people_Filter.Count > 0)
-                    } // End foreach (var itemSms in lstSms)
+        private void HostScan(Host input)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(input.url))
+                {
+                    ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: "+ input.name + ")");
+                    return;
+                }
 
-                } // End if (lstSms != null && lstSms.Count > 0)
+                string url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id;
+
+                using (var wb = new System.Net.WebClient())
+                {
+                    wb.DownloadString(url);
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
             }
         }
         protected override void OnStart(string[] args)
