@@ -10,14 +10,14 @@ using Scanner_Service.Models;
 namespace Scanner_Service
 {
     public class MySqlHelper
-    {   
+    {
         MySql.Data.MySqlClient.MySqlConnection connection;
         public MySqlHelper(string server, string user, string pass, string dbName, string ssl)
         {
             string myConnectionString;
 
             myConnectionString = "server={0};uid={1};pwd={2};database={3}";
-            if(ssl != "1")
+            if (ssl != "1")
             {
                 myConnectionString += ";SslMode=none";
             }
@@ -39,7 +39,7 @@ namespace Scanner_Service
         {
             try
             {
-                if(connection.State == ConnectionState.Open)
+                if (connection.State == ConnectionState.Open)
                 {
                     return true;
                 }
@@ -185,7 +185,7 @@ namespace Scanner_Service
                 {
                     return list;
                 }
-            
+
             }
             catch (Exception ex)
             {
@@ -221,12 +221,17 @@ namespace Scanner_Service
                     //Read the data and store them in the list
                     while (dataReader.Read())
                     {
+                        // ServiceLog.WriteErrorLog("connection_status=" + ((dataReader["connection_status"] + "")));
+                        // ServiceLog.WriteErrorLog("allow_send_sms=" + ((dataReader["allow_send_sms"] + "")));
                         list.Add(new Host()
                         {
                             id = dataReader["id"] + "",
                             name = dataReader["name"] + "",
                             phone = dataReader["phone"] + "",
-                            url = dataReader["url"] + ""
+                            url = dataReader["url"] + "",
+                            status = bool.Parse(dataReader["status"] + ""),
+                            connection_status = bool.Parse(dataReader["connection_status"] + ""),
+                            allow_send_sms = bool.Parse(dataReader["allow_send_sms"] + "")
                         });
                     }
 
@@ -250,6 +255,66 @@ namespace Scanner_Service
                 //close Connection
                 this.CloseConnection();
                 return new List<Host>();
+            }
+        }
+
+        public List<Sms> Select_CheckSMSToInsert(string hostId)
+        {
+            try
+            {
+                var list = new List<Sms>();
+
+                string query = @"
+                    select *
+                    from sms
+                    where hostId=" + hostId + " and sms_groupId=" + SMSGroup.GROUP_CONNECTION_ISSUE + @"
+                    order by id desc
+                    limit 1
+                ";
+
+                //Create a list to store the result
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //Create Command
+                    MySqlCommand cmd = new MySqlCommand(query, connection);
+                    //Create a data reader and Execute the command
+                    MySqlDataReader dataReader = cmd.ExecuteReader();
+
+                    //Read the data and store them in the list
+                    while (dataReader.Read())
+                    {
+                        list.Add(new Sms()
+                        {
+                            id = dataReader["id"] + "",
+                            hostId = dataReader["hostId"] + "",
+                            deviceId = dataReader["deviceId"] + "",
+                            type = int.Parse((dataReader["type"] +"") ==""?"0" : (dataReader["type"] + "")),
+                            sent = bool.Parse(dataReader["sent"] + ""),
+                            sms_groupId = int.Parse(dataReader["sms_groupId"] + "")
+                        });
+                    }
+
+                    //close Data Reader
+                    dataReader.Close();
+
+                    //close Connection
+                    this.CloseConnection();
+
+                    //return list to be displayed
+                    return list;
+                }
+                else
+                {
+                    return list;
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+                return new List<Sms>();
             }
         }
 
@@ -351,7 +416,78 @@ namespace Scanner_Service
                 //close Connection
                 this.CloseConnection();
             }
-            
+
+        }
+
+        public void UpdateHostForConnectionIssue(string hostId, int status = 0)
+        {
+            string query = "UPDATE host SET connection_status=" + status + " WHERE id=" + hostId;
+            try
+            {
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //create mysql command
+                    MySqlCommand cmd = new MySqlCommand();
+                    //Assign the query using CommandText
+                    cmd.CommandText = query;
+                    //Assign the connection using Connection
+                    cmd.Connection = connection;
+
+                    //Execute query
+                    cmd.ExecuteNonQuery();
+
+                    //close connection
+                    this.CloseConnection();
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+            }
+
+        }
+
+
+        public void CreateSmsRecordToSent(string hostId, int type)
+        {
+            var lstSms = Select_CheckSMSToInsert(hostId);
+            if (lstSms != null && lstSms.Count > 0 && lstSms[0].type == type)
+            {
+                // ServiceLog.WriteErrorLog("Đã tồn tại HostId=" + hostId + "; Type=" + type);
+                return;
+            }
+
+            // ServiceLog.WriteErrorLog("INSERT INTO HostId=" + hostId + "; Type=" + type);
+            string query = "INSERT INTO sms (hostId, sent, type, sms_groupId) VALUES(" + hostId + ",0, " + type + "," + SMSGroup.GROUP_CONNECTION_ISSUE + ");";
+            try
+            {
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //create mysql command
+                    MySqlCommand cmd = new MySqlCommand();
+                    //Assign the query using CommandText
+                    cmd.CommandText = query;
+                    //Assign the connection using Connection
+                    cmd.Connection = connection;
+
+                    //Execute query
+                    cmd.ExecuteNonQuery();
+
+                    //close connection
+                    this.CloseConnection();
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+            }
+
         }
     }
 }

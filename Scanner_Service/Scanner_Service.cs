@@ -49,30 +49,62 @@ namespace Scanner_Service
             {
                 foreach (var itemHost in lstHost)
                 {
-                    HostScan(itemHost);
+                    //HostScan(itemHost);
+                    System.Threading.Thread newThread = new System.Threading.Thread(HostScan);
+                    newThread.Start(itemHost);
                 }
             }
         }
 
-        private void HostScan(Host input)
+        private void HostScan(object data)
         {
+            // Try to connect to DB
+            var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
+
+            Host input = (Host)data;
+            string url = input.url;
             try
             {
+
                 if (string.IsNullOrEmpty(input.url))
                 {
                     ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: "+ input.name + ")");
                     return;
                 }
 
-                string url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id;
-
+                url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id;
+                // ServiceLog.WriteErrorLog("hot Id: " + input.id + "; input.connection_status: " + input.connection_status +"; status: " + input.status);
                 using (var wb = new System.Net.WebClient())
                 {
                     wb.DownloadString(url);
+                    // Update DB
+                    if (!input.connection_status)
+                    {
+                        mySql.UpdateHostForConnectionIssue(input.id, 1);
+                    }
+
+                    if (input.allow_send_sms)
+                    {
+                        mySql.CreateSmsRecordToSent(input.id, SMSType.GROUP_CONNECTION_RESOLVED);
+                    }
                 }
             }
             catch (Exception ex)
             {
+                // Update DB
+                if (input.connection_status)
+                {
+                    mySql.UpdateHostForConnectionIssue(input.id, 0);
+                }
+                // Add record
+                // ServiceLog.WriteErrorLog("input.allow_send_sms: " + input.allow_send_sms);
+                if (input.allow_send_sms)
+                {
+                    mySql.CreateSmsRecordToSent(input.id, SMSType.CONNECTION_ISSUE_FAILED);
+                }
+
+                // Log
+                ServiceLog.WriteErrorLog("Error at: " + url);
                 ServiceLog.WriteErrorLog(ex);
             }
         }
