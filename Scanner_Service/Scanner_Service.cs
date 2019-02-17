@@ -9,6 +9,7 @@ using System.Text;
 using System.Timers;
 using Scanner_Service.Models;
 using System.Linq;
+using System.Collections;
 
 namespace Scanner_Service
 {
@@ -18,6 +19,7 @@ namespace Scanner_Service
         private Config config = null;
         int count;
         MySqlHelper mySql = null;
+        Hashtable hasScanner;
 
         public Scanner_Service()
         {
@@ -49,7 +51,11 @@ namespace Scanner_Service
             {
                 foreach (var itemHost in lstHost)
                 {
-                    //HostScan(itemHost);
+                    if (hasScanner.ContainsKey(itemHost.id) && (bool)hasScanner[itemHost.id] == false)
+                        continue;
+
+                    // waiting to finish
+                    hasScanner[itemHost.id] = false;
                     System.Threading.Thread newThread = new System.Threading.Thread(HostScan);
                     newThread.Start(itemHost);
                 }
@@ -65,7 +71,6 @@ namespace Scanner_Service
             string url = input.url;
             try
             {
-
                 if (string.IsNullOrEmpty(input.url))
                 {
                     ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: "+ input.name + ")");
@@ -88,6 +93,9 @@ namespace Scanner_Service
                         mySql.CreateSmsRecordToSent(input.id, SMSType.GROUP_CONNECTION_RESOLVED);
                     }
                 }
+
+                // Finished
+                hasScanner[input.id] = true;
             }
             catch (Exception ex)
             {
@@ -106,10 +114,14 @@ namespace Scanner_Service
                 // Log
                 ServiceLog.WriteErrorLog("Error at: " + url);
                 ServiceLog.WriteErrorLog(ex);
+
+                // Finished
+                hasScanner[input.id] = true;
             }
         }
         protected override void OnStart(string[] args)
         {
+            hasScanner = new Hashtable();
             // Load config
             config = FileHelper.ReadConfigFile();
             if(config.Exception != null)
