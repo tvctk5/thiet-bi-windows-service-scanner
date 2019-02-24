@@ -20,6 +20,7 @@ namespace Scanner_Service
         int count;
         MySqlHelper mySql = null;
         Hashtable hasScanner;
+        Hashtable hasUpgrade;
 
         public Scanner_Service()
         {
@@ -42,6 +43,7 @@ namespace Scanner_Service
 
         public void WorkProcess(object sender, System.Timers.ElapsedEventArgs e)
         {
+            // ServiceLog.WriteErrorLog("WorkProcess runing");
             // Get data and send message
             // Try to send a message
             // get all people to send sms
@@ -60,6 +62,51 @@ namespace Scanner_Service
                     newThread.Start(itemHost);
                 }
             }
+        }
+        
+        public void WorkProcess_Upgrade(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            // ServiceLog.WriteErrorLog("WorkProcess_Upgrade runing
+            // get active version
+            var version = mySql.Select_Active_Version();
+            if (version == null || version.id == "")
+                return;
+
+            // Get list host to upgrade
+            var lstHostUpgrade = mySql.Select_HostToUpgrade(version.id);
+            if (lstHostUpgrade == null || lstHostUpgrade.Count <= 0)
+                return;
+            
+            var dbCOnfig = mySql.GetConfig();
+            var Folder = "/admin/files/";
+            var HostLink = "http://localhost";
+            if(dbCOnfig != null && dbCOnfig.Count > 0)
+            {
+                if (dbCOnfig.ContainsKey(DBConfig.FOLDER_UPLOAD))
+                {
+                    Folder = dbCOnfig[DBConfig.FOLDER_UPLOAD] + "";
+                }
+
+                if (dbCOnfig.ContainsKey(DBConfig.SERVER_URL))
+                {
+                    HostLink = dbCOnfig[DBConfig.SERVER_URL] + "";
+                }
+            }
+
+            var fullFileLink = HostLink + Folder + version.uri_file;
+            version.uri_file = fullFileLink;
+
+            foreach (var itemHost in lstHostUpgrade)
+            {
+                if (hasUpgrade.ContainsKey(itemHost.id) && (bool)hasUpgrade[itemHost.id] == false)
+                    continue;
+
+                hasUpgrade[itemHost.id] = false;
+                itemHost.upgradeVersion = version;
+                System.Threading.Thread newThread = new System.Threading.Thread(HostUpgrade);
+                newThread.Start(itemHost);
+            }
+
         }
 
         private void HostScan(object data)
@@ -119,9 +166,53 @@ namespace Scanner_Service
                 hasScanner[input.id] = true;
             }
         }
+
+
+        private void HostUpgrade(object data)
+        {
+            // Try to connect to DB
+            var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
+
+            Host input = (Host)data;
+            string url = input.url;
+            try
+            {
+                if (string.IsNullOrEmpty(input.url))
+                {
+                    ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: " + input.name + ")");
+                    return;
+                }
+
+                url = (input.url.Trim('/')) + "/upgrade.php?hostid=" + input.id + "&versionid=" + input.upgradeVersion.id + "&version=" + input.upgradeVersion.version + "&localpath=" + config.LocalPathUpgradeJob+ "&fileupgrade=" + input.upgradeVersion.uri_file;
+                // ServiceLog.WriteErrorLog("hot Id: " + input.id + "; input.connection_status: " + input.connection_status +"; status: " + input.status);
+                // ServiceLog.WriteErrorLog("[UPGRADE] URL: " + url);
+                using (var wb = new System.Net.WebClient())
+                {
+                    var dataResp = "<div>URL: " + url + " </div>" + wb.DownloadString(url);
+                    // .WriteErrorLog("[UPGRADE] Response: " + dataResp);
+
+                    // Update DB
+                    mySql.UpdateUpgradeLog(input.id, dataResp);
+                }
+
+                // Finished
+                hasUpgrade[input.id] = true;
+            }
+            catch (Exception ex)
+            {
+                // Log
+                ServiceLog.WriteErrorLog("[UPGRADE] Error at: " + url);
+                ServiceLog.WriteErrorLog(ex);
+
+                // Finished
+                hasUpgrade[input.id] = true;
+            }
+        }
+
         protected override void OnStart(string[] args)
         {
             hasScanner = new Hashtable();
+            hasUpgrade = new Hashtable();
             // Load config
             config = FileHelper.ReadConfigFile();
             if(config.Exception != null)
@@ -137,6 +228,12 @@ namespace Scanner_Service
             timeDelay = new Timer();
             this.timeDelay.Interval = config.Interval;
             this.timeDelay.Elapsed += new ElapsedEventHandler(WorkProcess);
+            if (config.EnableUpgradeJob)
+            {
+                // Config WorkProcess_Upgrade
+                ServiceLog.WriteErrorLog("Add WorkProcess_Upgrade");
+                this.timeDelay.Elapsed += new ElapsedEventHandler(WorkProcess_Upgrade);
+            }
             timeDelay.Enabled = true;
             ServiceLog.WriteErrorLog("Scanner service started");
         }

@@ -15,5 +15,11 @@ namespace Scanner_Service.Models
         public bool status { get; set; }
         public bool connection_status { get; set; }
         public bool allow_send_sms { get; set; }
+        public string versionId { get; set; }
+        public string version { get; set; }
+        public string last_upgrade { get; set; }
+        public bool auto_upgrade { get; set; }
+
+        public UpgradeVersion upgradeVersion { get; set; }
     }
 }

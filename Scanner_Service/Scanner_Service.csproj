@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\Config.cs" />
+    <Compile Include="Models\UpgradeVersion.cs" />
     <Compile Include="Models\Sms.cs" />
     <Compile Include="Models\Message.cs" />
     <Compile Include="Models\MySqlConfig.cs" />

@@ -45,6 +45,17 @@ namespace Scanner_Service
                         case "MYSQL_SSL": objConfig.MySql.SSL = strInfo; break;
                         case "SMS_USER": objConfig.SmsApi.User = strInfo; break;
                         case "SMS_PASS": objConfig.SmsApi.Pass = strInfo; break;
+                        case "UPGRADE_JOB_ENABLE":
+                            objConfig.EnableUpgradeJob = false;
+                            if (strInfo == "1")
+                            {
+                                objConfig.EnableUpgradeJob = true;
+                            }
+
+                            break;
+                        case "UPGRADE_JOB_LOCAL_PATH":
+                            objConfig.LocalPathUpgradeJob = strInfo;
+                            break;
                     }
                 }
 

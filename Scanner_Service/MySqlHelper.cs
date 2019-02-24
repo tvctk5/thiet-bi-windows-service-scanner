@@ -289,7 +289,7 @@ namespace Scanner_Service
                             id = dataReader["id"] + "",
                             hostId = dataReader["hostId"] + "",
                             deviceId = dataReader["deviceId"] + "",
-                            type = int.Parse((dataReader["type"] +"") ==""?"0" : (dataReader["type"] + "")),
+                            type = int.Parse((dataReader["type"] + "") == "" ? "0" : (dataReader["type"] + "")),
                             sent = bool.Parse(dataReader["sent"] + ""),
                             sms_groupId = int.Parse(dataReader["sms_groupId"] + "")
                         });
@@ -489,5 +489,219 @@ namespace Scanner_Service
             }
 
         }
+
+        public UpgradeVersion Select_Active_Version()
+        {
+            try
+            {
+                var version = new UpgradeVersion();
+
+                string query = @"
+                    select *
+                    from upgrade_version
+                    where active = 1
+                    order by id desc
+                ";
+
+                //Create a list to store the result
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //Create Command
+                    MySqlCommand cmd = new MySqlCommand(query, connection);
+                    //Create a data reader and Execute the command
+                    MySqlDataReader dataReader = cmd.ExecuteReader();
+
+                    //Read the data and store them in the list
+                    while (dataReader.Read())
+                    {
+                        // ServiceLog.WriteErrorLog("connection_status=" + ((dataReader["connection_status"] + "")));
+                        // ServiceLog.WriteErrorLog("allow_send_sms=" + ((dataReader["allow_send_sms"] + "")));
+                        version = new UpgradeVersion()
+                        {
+                            id = dataReader["id"] + "",
+                            version = dataReader["version"] + "",
+                            uri_file = dataReader["uri_file"] + "",
+                            active = bool.Parse(dataReader["active"] + ""),
+                            createdate = dataReader["createdate"] + ""
+                        };
+
+                        break;
+                    }
+
+                    //close Data Reader
+                    dataReader.Close();
+
+                    //close Connection
+                    this.CloseConnection();
+
+                    //return list to be displayed
+                    return version;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+                return null;
+            }
+        }
+
+
+        public System.Collections.Hashtable GetConfig()
+        {
+            try
+            {
+                var data = new System.Collections.Hashtable();
+
+                string query = @"
+                    select *
+                    from config
+                ";
+
+                //Create a list to store the result
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //Create Command
+                    MySqlCommand cmd = new MySqlCommand(query, connection);
+                    //Create a data reader and Execute the command
+                    MySqlDataReader dataReader = cmd.ExecuteReader();
+                    data = new System.Collections.Hashtable();
+
+                    //Read the data and store them in the list
+                    while (dataReader.Read())
+                    {
+                        // ServiceLog.WriteErrorLog("connection_status=" + ((dataReader["connection_status"] + "")));
+                        // ServiceLog.WriteErrorLog("allow_send_sms=" + ((dataReader["allow_send_sms"] + "")));
+                        data[dataReader["code"] + ""] = dataReader["value"] + "";
+                    }
+
+                    //close Data Reader
+                    dataReader.Close();
+
+                    //close Connection
+                    this.CloseConnection();
+
+                    //return list to be displayed
+                    return data;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+                return null;
+            }
+        }
+
+
+        public List<Host> Select_HostToUpgrade(string version)
+        {
+            try
+            {
+                var list = new List<Host>();
+
+                string query = @"
+                    select *
+                    from host
+                    where auto_upgrade=1 and versionId <> " + version + @"
+                    order by id
+                ";
+
+                //Create a list to store the result
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //Create Command
+                    MySqlCommand cmd = new MySqlCommand(query, connection);
+                    //Create a data reader and Execute the command
+                    MySqlDataReader dataReader = cmd.ExecuteReader();
+
+                    //Read the data and store them in the list
+                    while (dataReader.Read())
+                    {
+                        // ServiceLog.WriteErrorLog("connection_status=" + ((dataReader["connection_status"] + "")));
+                        // ServiceLog.WriteErrorLog("allow_send_sms=" + ((dataReader["allow_send_sms"] + "")));
+                        list.Add(new Host()
+                        {
+                            id = dataReader["id"] + "",
+                            name = dataReader["name"] + "",
+                            phone = dataReader["phone"] + "",
+                            url = dataReader["url"] + "",
+                            status = bool.Parse(dataReader["status"] + ""),
+                            connection_status = bool.Parse(dataReader["connection_status"] + ""),
+                            allow_send_sms = bool.Parse(dataReader["allow_send_sms"] + ""),
+                            auto_upgrade = true,
+                            versionId = dataReader["versionId"] + "",
+                            version = dataReader["version"] + "",
+                            last_upgrade = dataReader["last_upgrade"] + ""
+                        });
+                    }
+
+                    //close Data Reader
+                    dataReader.Close();
+
+                    //close Connection
+                    this.CloseConnection();
+
+                    //return list to be displayed
+                    return list;
+                }
+                else
+                {
+                    return list;
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+                return new List<Host>();
+            }
+        }
+
+
+        public void UpdateUpgradeLog(string hostId, string log)
+        {
+            log = log.Replace("'", "\"");
+            string query = "UPDATE host SET log_upgrade='" + log + "' WHERE id=" + hostId;
+            try
+            {
+                //Open connection
+                if (this.OpenConnection() == true)
+                {
+                    //create mysql command
+                    MySqlCommand cmd = new MySqlCommand();
+                    //Assign the query using CommandText
+                    cmd.CommandText = query;
+                    //Assign the connection using Connection
+                    cmd.Connection = connection;
+
+                    //Execute query
+                    cmd.ExecuteNonQuery();
+
+                    //close connection
+                    this.CloseConnection();
+                }
+            }
+            catch (Exception ex)
+            {
+                ServiceLog.WriteErrorLog(ex);
+                //close Connection
+                this.CloseConnection();
+            }
+
+        }
+
+
+
     }
 }
