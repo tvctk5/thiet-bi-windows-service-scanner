@@ -611,7 +611,7 @@ namespace Scanner_Service
                 string query = @"
                     select *
                     from host
-                    where auto_upgrade=1 and versionId <> " + version + @"
+                    where auto_upgrade=1 and (versionId is null or versionId <> " + version + @")  
                     order by id
                 ";
 
