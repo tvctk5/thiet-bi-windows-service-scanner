@@ -112,6 +112,7 @@
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <None Include="ReleaseVesion\20190228\Scanner.rar" />
+    <None Include="ReleaseVesion\20190324\20190324.rar" />
     <None Include="uninstall.bat">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

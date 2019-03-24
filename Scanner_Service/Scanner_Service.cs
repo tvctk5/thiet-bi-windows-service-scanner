@@ -124,7 +124,7 @@ namespace Scanner_Service
                     return;
                 }
 
-                url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id;
+                url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id + "&sms=" + (input.allow_send_sms? "1" : "0");
                 // ServiceLog.WriteErrorLog("hot Id: " + input.id + "; input.connection_status: " + input.connection_status +"; status: " + input.status);
                 using (var wb = new System.Net.WebClient())
                 {
