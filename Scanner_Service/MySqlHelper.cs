@@ -604,16 +604,19 @@ namespace Scanner_Service
 
         public List<Host> Select_HostToUpgrade(string version)
         {
-            try
-            {
-                var list = new List<Host>();
+            if (string.IsNullOrEmpty(version))
+                version = "''";
 
-                string query = @"
+            string query = @"
                     select *
                     from host
                     where auto_upgrade=1 and (versionId is null or versionId <> " + version + @")  
                     order by id
                 ";
+
+            try
+            {
+                var list = new List<Host>();
 
                 //Create a list to store the result
                 //Open connection
@@ -662,6 +665,7 @@ namespace Scanner_Service
             catch (Exception ex)
             {
                 ServiceLog.WriteErrorLog(ex);
+                ServiceLog.WriteErrorLog("Query: " + query);
                 //close Connection
                 this.CloseConnection();
                 return new List<Host>();
