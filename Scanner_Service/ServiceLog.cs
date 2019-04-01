@@ -9,6 +9,7 @@ namespace Scanner_Service
 {
     public class ServiceLog
     {
+        public static string CurrentLogFile { get; set; }
         public static void WriteErrorLog(string message)
         {
             StreamWriter sw = null;
@@ -45,8 +46,16 @@ namespace Scanner_Service
             }
         }
 
-        private static string CheckLogFile(string FileName = "LogFile")
+        private static string CheckLogFile(string FileName= "")
         {
+            if (string.IsNullOrEmpty(FileName))
+                FileName = "LogFile";
+
+            if (string.IsNullOrEmpty(CurrentLogFile) || FileName != "LogFile")
+                CurrentLogFile = FileName;
+
+            FileName = CurrentLogFile;
+
             try
             {
                 DirectoryInfo dic = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory + "\\Logs\\");
