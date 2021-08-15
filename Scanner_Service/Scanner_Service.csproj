@@ -134,10 +134,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config - Copy.xml">
-      <SubType>Designer</SubType>
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="config.xml">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <SubType>Designer</SubType>

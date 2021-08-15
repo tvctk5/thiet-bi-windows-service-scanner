@@ -11,7 +11,8 @@ namespace Scanner_Service
 {
     public class MySqlHelper
     {
-        MySql.Data.MySqlClient.MySqlConnection connection;
+        string ConnectionString;
+
         public MySqlHelper(string server, string user, string pass, string dbName, string ssl)
         {
             string myConnectionString;
@@ -22,11 +23,9 @@ namespace Scanner_Service
                 myConnectionString += ";SslMode=none";
             }
 
-            myConnectionString = string.Format(myConnectionString, server, user, pass, dbName);
+            ConnectionString = string.Format(myConnectionString, server, user, pass, dbName);
 
-            connection = new MySql.Data.MySqlClient.MySqlConnection();
-            connection.ConnectionString = myConnectionString;
-            // ServiceLog.WriteErrorLog(myConnectionString);
+            ServiceLog.WriteErrorLog(ConnectionString);
         }
 
         #region Open - close connection
@@ -35,31 +34,28 @@ namespace Scanner_Service
         /// Open conn
         /// </summary>
         /// <returns></returns>
-        public bool OpenConnection()
+        public MySqlConnection OpenConnection()
         {
             try
             {
-                if (connection.State == ConnectionState.Open)
-                {
-                    return true;
-                }
+                var connection = new MySql.Data.MySqlClient.MySqlConnection();
+                connection.ConnectionString = ConnectionString;
 
                 connection.Open();
+                return connection;
             }
             catch (MySql.Data.MySqlClient.MySqlException ex)
             {
                 ServiceLog.WriteErrorLog(ex);
-                return false;
+                return null;
             }
-
-            return true;
         }
 
         /// <summary>
         /// Open conn
         /// </summary>
         /// <returns></returns>
-        public bool CloseConnection()
+        public bool CloseConnection(MySqlConnection connection)
         {
             try
             {
@@ -82,9 +78,9 @@ namespace Scanner_Service
         public void Insert(string query)
         {
             // string query = "INSERT INTO tableinfo (name, age) VALUES('John Smith', '33')";
-
+            MySqlConnection connection;
             //open connection
-            if (this.OpenConnection() == true)
+            connection = this.OpenConnection();
             {
                 //create command and assign the query and connection from the constructor
                 MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -93,7 +89,7 @@ namespace Scanner_Service
                 cmd.ExecuteNonQuery();
 
                 //close connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
         }
 
@@ -101,9 +97,9 @@ namespace Scanner_Service
         public void Update(string query)
         {
             //string query = "UPDATE tableinfo SET name='Joe', age='22' WHERE name='John Smith'";
-
+            MySqlConnection connection;
             //Open connection
-            if (this.OpenConnection() == true)
+            connection = this.OpenConnection();
             {
                 //create mysql command
                 MySqlCommand cmd = new MySqlCommand();
@@ -116,7 +112,7 @@ namespace Scanner_Service
                 cmd.ExecuteNonQuery();
 
                 //close connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
         }
 
@@ -124,17 +120,18 @@ namespace Scanner_Service
         public void Delete(string query)
         {
             // string query = "DELETE FROM tableinfo WHERE name='John Smith'";
-
-            if (this.OpenConnection() == true)
+            MySqlConnection connection = null;
+            connection = this.OpenConnection();
             {
                 MySqlCommand cmd = new MySqlCommand(query, connection);
                 cmd.ExecuteNonQuery();
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
         }
 
         public List<Message> Select_SMSPending()
         {
+            MySqlConnection connection = null;
             try
             {
                 var list = new List<Message>();
@@ -149,7 +146,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -176,13 +173,9 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
-                    return list;
-                }
-                else
-                {
                     return list;
                 }
 
@@ -191,13 +184,14 @@ namespace Scanner_Service
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return new List<Message>();
             }
         }
 
         public List<Host> Select_HostToScan()
         {
+            MySqlConnection connection = null;
             try
             {
                 var list = new List<Host>();
@@ -211,7 +205,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -239,13 +233,9 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
-                    return list;
-                }
-                else
-                {
                     return list;
                 }
             }
@@ -253,13 +243,14 @@ namespace Scanner_Service
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return new List<Host>();
             }
         }
 
         public List<Sms> Select_CheckSMSToInsert(string hostId)
         {
+            MySqlConnection connection = null;
             try
             {
                 var list = new List<Sms>();
@@ -274,7 +265,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -299,13 +290,9 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
-                    return list;
-                }
-                else
-                {
                     return list;
                 }
             }
@@ -313,7 +300,7 @@ namespace Scanner_Service
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return new List<Sms>();
             }
         }
@@ -321,6 +308,7 @@ namespace Scanner_Service
         //Select statement
         public List<string>[] Select(string query)
         {
+            MySqlConnection connection = null;
             // string query = "SELECT * FROM tableinfo";
 
             //Create a list to store the result
@@ -330,7 +318,7 @@ namespace Scanner_Service
             list[2] = new List<string>();
 
             //Open connection
-            if (this.OpenConnection() == true)
+            connection = this.OpenConnection();
             {
                 //Create Command
                 MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -349,13 +337,9 @@ namespace Scanner_Service
                 dataReader.Close();
 
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
 
                 //return list to be displayed
-                return list;
-            }
-            else
-            {
                 return list;
             }
         }
@@ -363,11 +347,12 @@ namespace Scanner_Service
         //Count statement
         public int Count(string query)
         {
+            MySqlConnection connection = null;
             // string query = "SELECT Count(*) FROM tableinfo";
             int Count = -1;
 
             //Open Connection
-            if (this.OpenConnection() == true)
+            connection = this.OpenConnection();
             {
                 //Create Mysql Command
                 MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -376,12 +361,8 @@ namespace Scanner_Service
                 Count = int.Parse(cmd.ExecuteScalar() + "");
 
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
 
-                return Count;
-            }
-            else
-            {
                 return Count;
             }
         }
@@ -390,11 +371,12 @@ namespace Scanner_Service
         //Update statement
         public void UpdateSmsStatusToSent(string id)
         {
+            MySqlConnection connection = null;
             string query = "UPDATE sms SET sent=1 WHERE id=" + id;
             try
             {
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //create mysql command
                     MySqlCommand cmd = new MySqlCommand();
@@ -407,25 +389,26 @@ namespace Scanner_Service
                     cmd.ExecuteNonQuery();
 
                     //close connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
                 }
             }
             catch (Exception ex)
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
 
         }
 
         public void UpdateHostForConnectionIssue(string hostId, int status = 0)
         {
+            MySqlConnection connection = null;
             string query = "UPDATE host SET connection_status=" + status + " WHERE id=" + hostId;
             try
             {
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //create mysql command
                     MySqlCommand cmd = new MySqlCommand();
@@ -438,14 +421,14 @@ namespace Scanner_Service
                     cmd.ExecuteNonQuery();
 
                     //close connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
                 }
             }
             catch (Exception ex)
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
 
         }
@@ -453,6 +436,7 @@ namespace Scanner_Service
 
         public void CreateSmsRecordToSent(string hostId, int type)
         {
+            MySqlConnection connection = null;
             var lstSms = Select_CheckSMSToInsert(hostId);
             if (lstSms != null && lstSms.Count > 0 && lstSms[0].type == type)
             {
@@ -465,7 +449,7 @@ namespace Scanner_Service
             try
             {
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //create mysql command
                     MySqlCommand cmd = new MySqlCommand();
@@ -478,20 +462,21 @@ namespace Scanner_Service
                     cmd.ExecuteNonQuery();
 
                     //close connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
                 }
             }
             catch (Exception ex)
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
 
         }
 
         public UpgradeVersion Select_Active_Version()
         {
+            MySqlConnection connection = null;
             try
             {
                 var version = new UpgradeVersion();
@@ -505,7 +490,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -533,7 +518,7 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
                     return version;
@@ -545,7 +530,7 @@ namespace Scanner_Service
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return null;
             }
         }
@@ -553,6 +538,7 @@ namespace Scanner_Service
 
         public System.Collections.Hashtable GetConfig()
         {
+            MySqlConnection connection = null;
             try
             {
                 var data = new System.Collections.Hashtable();
@@ -564,7 +550,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -584,7 +570,7 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
                     return data;
@@ -596,7 +582,7 @@ namespace Scanner_Service
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return null;
             }
         }
@@ -604,6 +590,7 @@ namespace Scanner_Service
 
         public List<Host> Select_HostToUpgrade(string version)
         {
+            MySqlConnection connection = null;
             if (string.IsNullOrEmpty(version))
                 version = "''";
 
@@ -620,7 +607,7 @@ namespace Scanner_Service
 
                 //Create a list to store the result
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //Create Command
                     MySqlCommand cmd = new MySqlCommand(query, connection);
@@ -652,13 +639,9 @@ namespace Scanner_Service
                     dataReader.Close();
 
                     //close Connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
 
                     //return list to be displayed
-                    return list;
-                }
-                else
-                {
                     return list;
                 }
             }
@@ -667,7 +650,7 @@ namespace Scanner_Service
                 ServiceLog.WriteErrorLog(ex);
                 ServiceLog.WriteErrorLog("Query: " + query);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
                 return new List<Host>();
             }
         }
@@ -675,12 +658,13 @@ namespace Scanner_Service
 
         public void UpdateUpgradeLog(string hostId, string log)
         {
+            MySqlConnection connection = null;
             log = log.Replace("'", "\"");
             string query = "UPDATE host SET log_upgrade='" + log + "' WHERE id=" + hostId;
             try
             {
                 //Open connection
-                if (this.OpenConnection() == true)
+                connection = this.OpenConnection();
                 {
                     //create mysql command
                     MySqlCommand cmd = new MySqlCommand();
@@ -693,14 +677,14 @@ namespace Scanner_Service
                     cmd.ExecuteNonQuery();
 
                     //close connection
-                    this.CloseConnection();
+                    this.CloseConnection(connection);
                 }
             }
             catch (Exception ex)
             {
                 ServiceLog.WriteErrorLog(ex);
                 //close Connection
-                this.CloseConnection();
+                this.CloseConnection(connection);
             }
 
         }

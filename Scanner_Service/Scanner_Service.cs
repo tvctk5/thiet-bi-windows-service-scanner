@@ -63,7 +63,7 @@ namespace Scanner_Service
                 }
             }
         }
-        
+
         public void WorkProcess_Upgrade(object sender, System.Timers.ElapsedEventArgs e)
         {
             // ServiceLog.WriteErrorLog("WorkProcess_Upgrade runing
@@ -76,11 +76,11 @@ namespace Scanner_Service
             var lstHostUpgrade = mySql.Select_HostToUpgrade(version.id);
             if (lstHostUpgrade == null || lstHostUpgrade.Count <= 0)
                 return;
-            
+
             var dbCOnfig = mySql.GetConfig();
             var Folder = "/admin/files/";
             var HostLink = "http://localhost";
-            if(dbCOnfig != null && dbCOnfig.Count > 0)
+            if (dbCOnfig != null && dbCOnfig.Count > 0)
             {
                 if (dbCOnfig.ContainsKey(DBConfig.FOLDER_UPLOAD))
                 {
@@ -112,7 +112,7 @@ namespace Scanner_Service
         private void HostScan(object data)
         {
             // Try to connect to DB
-            var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
+            // var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
 
             Host input = (Host)data;
             string url = input.url;
@@ -120,11 +120,11 @@ namespace Scanner_Service
             {
                 if (string.IsNullOrEmpty(input.url))
                 {
-                    ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: "+ input.name + ")");
+                    ServiceLog.WriteErrorLog("Url is null or empty (Host id: " + input.id + "; Host name: " + input.name + ")");
                     return;
                 }
 
-                url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id + "&sms=" + (input.allow_send_sms? "1" : "0");
+                url = (input.url.Trim('/')) + "/scanner.php?hostid=" + input.id + "&sms=" + (input.allow_send_sms ? "1" : "0");
                 // ServiceLog.WriteErrorLog("hot Id: " + input.id + "; input.connection_status: " + input.connection_status +"; status: " + input.status);
                 using (var wb = new System.Net.WebClient())
                 {
@@ -171,7 +171,7 @@ namespace Scanner_Service
         private void HostUpgrade(object data)
         {
             // Try to connect to DB
-            var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
+            // var mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
 
             Host input = (Host)data;
             string url = input.url;
@@ -183,7 +183,7 @@ namespace Scanner_Service
                     return;
                 }
 
-                url = (input.url.Trim('/')) + "/upgrade.php?hostid=" + input.id + "&versionid=" + input.upgradeVersion.id + "&version=" + input.upgradeVersion.version + "&localpath=" + config.LocalPathUpgradeJob+ "&fileupgrade=" + input.upgradeVersion.uri_file;
+                url = (input.url.Trim('/')) + "/upgrade.php?hostid=" + input.id + "&versionid=" + input.upgradeVersion.id + "&version=" + input.upgradeVersion.version + "&localpath=" + config.LocalPathUpgradeJob + "&fileupgrade=" + input.upgradeVersion.uri_file;
                 // ServiceLog.WriteErrorLog("hot Id: " + input.id + "; input.connection_status: " + input.connection_status +"; status: " + input.status);
                 // ServiceLog.WriteErrorLog("[UPGRADE] URL: " + url);
                 using (var wb = new System.Net.WebClient())
@@ -215,7 +215,7 @@ namespace Scanner_Service
             hasUpgrade = new Hashtable();
             // Load config
             config = FileHelper.ReadConfigFile();
-            if(config.Exception != null)
+            if (config.Exception != null)
             {
                 ServiceLog.WriteErrorLog(config.Exception);
                 // Stop service
@@ -224,7 +224,7 @@ namespace Scanner_Service
 
             // Try to connect to DB
             mySql = new MySqlHelper(config.MySql.Server, config.MySql.User, config.MySql.Pass, config.MySql.DBName, config.MySql.SSL);
-            
+
             timeDelay = new Timer();
             this.timeDelay.Interval = config.Interval;
             this.timeDelay.Elapsed += new ElapsedEventHandler(WorkProcess);
